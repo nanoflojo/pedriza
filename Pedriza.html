@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Riscos Pedriza</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v3.20.1/css/ol.css" type="text/css">
+	<link href='https://rawgit.com/sookoll/ol3-layerswitcher/master/src/ol3-layerswitcher.css' rel='stylesheet'/>
+	<link rel="stylesheet" href="https://unpkg.com/ol-popup@4.0.0/src/ol-popup.css" /> 
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src=""></script>
+    <script src="https://openlayers.org/en/v3.20.1/build/ol.js"></script>
+	        <script src="https://rawgit.com/sookoll/ol3-layerswitcher/master/src/ol3-layerswitcher.js"></script>
+					       <script src="https://unpkg.com/ol-popup@4.0.0"></script>
+	<style>
+      .map {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: absolute;
+            z-index: 1;
+            top: 0;
+            bottom: 0;
+      }
+     .layer-switcher button {
+        width: 50px;
+        height: 25px;
+        background-image: url('http://mapamtbmadrid.x10host.com/MapaRutasMTB/Iconos/BotonMapas.png');
+        background-color: rgba(0,60,136,.5);
+        background-position: 2px;          
+      }
+          .layer-switcher .panel {
+    border: 4px solid #33607F;
+    border-radius: 10px;
+    font-size: small;
+
+}
+          .ol-rotate {
+        top: 10em;
+      }
+               #map .ol-zoom .ol-zoom-out {
+        margin-top: 204px;
+      }
+      #map .ol-zoomslider {
+        background-color: transparent;
+        top: 2.3em;
+      }
+
+      #map .ol-touch .ol-zoom .ol-zoom-out {
+        margin-top: 212px; 
+      }
+      #map .ol-touch .ol-zoomslider {
+        top: 2.75em;
+      }
+
+      #map .ol-zoom-in.ol-has-tooltip:hover [role=tooltip],
+      #map .ol-zoom-in.ol-has-tooltip:focus [role=tooltip] {
+        top: 3px;
+      }
+
+      #map .ol-zoom-out.ol-has-tooltip:hover [role=tooltip],
+      #map .ol-zoom-out.ol-has-tooltip:focus [role=tooltip] {
+        top: 232px;
+      }
+      .ol-scale-line {
+        margin-left: 2.5em;
+        bottom: 0.6em;
+      }
+		.ol-mouse-position{
+		position: absolute;
+    top: 0.5em;
+    margin-right: 3em;
+		color: #000000;
+    background-color: rgba(255,255,255, 0.5);
+    top: 0.5em;
+    margin-right: 3em;
+    border: solid 3px rgba(173,217,239, 0.7);
+    font-size:12px;
+		}
+                .ol-geocoder.gcd-gl-container {
+    top: 270px;
+}
+
+            .boton-pan-center {
+      bottom: 0.5em;
+      left: 0.5em;
+      }
+	</style>
+  </head>
+  <body>
+      <div id="map" class="map"></div>
+    <script>
+	
+	       var defaultStyle = {
+        'Point': new ol.style.Style({
+          image: new ol.style.Icon ({src: 'http://mapamtbmadrid.x10host.com/MapaRutasMTB/Iconos/Red_flag_OK_24.png'})
+        }),
+
+        'MultiLineString': new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            color: '#BB3EB7',
+            width: 4
+          })
+        }),
+
+      };
+	        var style = {styleFunction};
+            var styleFunction = function(feature, resolution) {
+        var featureStyleFunction = feature.getStyleFunction();
+        if (featureStyleFunction) {
+          return featureStyleFunction.call(feature, resolution);
+        } else {
+          return defaultStyle[feature.getGeometry().getType()];
+        }
+      };
+            var dragAndDropInteraction = new ol.interaction.DragAndDrop({
+        formatConstructors: [
+          ol.format.GPX,
+          ol.format.GeoJSON,
+          ol.format.IGC,
+          ol.format.KML,
+          ol.format.TopoJSON
+        ]
+      });
+    var projection_PNOA = ol.proj.get('EPSG:3857');
+    var projectionExtent_PNOA = projection_PNOA.getExtent();
+    var size_PNOA = ol.extent.getWidth(projectionExtent_PNOA) / 256;
+    var resolutions_PNOA = new Array(20);
+    var matrixIds_PNOA = new Array(20);
+    for (var z = 0; z < 20; ++z) {
+        resolutions_PNOA[z] = size_PNOA / Math.pow(2, z);
+        matrixIds_PNOA[z] = z;
+    }
+	
+	                var sourceFeatures = new ol.source.Vector(),
+    layerFeatures = new ol.layer.Vector({source: sourceFeatures});
+	
+	
+	
+      var map = new ol.Map({
+            interactions: ol.interaction.defaults().extend([dragAndDropInteraction]),
+    target: document.getElementById('map'),
+    renderer: 'canvas',
+        layers: [
+		        new ol.layer.Tile({
+         source: new ol.source.TileWMS(({
+          preload: 4,
+          url: "http://www.ign.es/wms-inspire/mapa-raster",
+          attributions: '<a target="_blank" href="https://openlayers.org/">OpenLayers</a> Teselas cartográficas cedidas por © <a target="_blank" href="https://www.ign.es/web/ign/portal">Instituto Geográfico Nacional de España</a>',
+            params: {
+              "LAYERS": "mtn_rasterizado",
+              "TILED": "true",
+              "VERSION": "1.3.0"},
+          })),
+          title: "Mapa Raster del IGN",
+          type: 'base',
+          visible: false,
+          opacity: 1.000000,
+           }),
+          new ol.layer.Tile({
+              title: 'OpenStreetMap',
+              type: 'base',
+              visible: true,
+              source: new ol.source.XYZ({
+                attributions: [
+                  '<a target="_blank" href="https://openlayers.org/">OpenLayers</a>',
+                  ol.source.OSM.ATTRIBUTION
+                ],
+                url: 'http://a.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                })
+            }),
+			            new ol.layer.Tile({
+              title: 'OpenCycleMap',
+              type: 'base',
+              visible: false,
+              source: new ol.source.XYZ({
+                attributions: [
+                  '<a target="_blank" href="https://openlayers.org/">OpenLayers</a> © <a target="_blank" href="https://www.opencyclemap.org/">OpenCycleMap</a>',
+                  ol.source.OSM.ATTRIBUTION
+                ],
+                url: 'https://{a-c}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png' +
+              '?apikey=081ff7d83c0549c7a758fdd4df478f0f'
+              })
+            }),
+                         new ol.layer.Tile({
+                source: new ol.source.WMTS(({
+                  url: "http://www.ign.es/wmts/pnoa-ma",
+                  attributions:  '<a target="_blank" href="https://openlayers.org/">OpenLayers</a> Teselas cartográficas cedidas por © <a target="_blank" href="https://www.ign.es/web/ign/portal">Instituto Geográfico Nacional de España</a>',
+                  "layer": "OI.OrthoimageCoverage",
+                  matrixSet: 'EPSG:3857',
+             			format: 'image/jpeg',
+              		projection: projection_PNOA,
+              		tileGrid: new ol.tilegrid.WMTS({
+                    origin: ol.extent.getTopLeft(projectionExtent_PNOA),
+                		resolutions: resolutions_PNOA,
+                		matrixIds: matrixIds_PNOA
+                  }),
+                  style: 'default',
+              		wrapX: true,
+                  "VERSION": "1.0.0",
+                })),
+          title: "Satelite limpio",
+          type: 'base',
+          visible: false,
+                opacity: 1.0,
+              }),
+                     new ol.layer.Group({
+            title: 'Satelite y callejero',
+            type: 'base',
+            combine: true,
+            visible: true,
+            layers: [
+              new ol.layer.Tile({
+                source: new ol.source.WMTS(({
+                  url: "http://www.ign.es/wmts/pnoa-ma",
+                  attributions:  '<a target="_blank" href="https://openlayers.org/">OpenLayers</a> Teselas cartográficas cedidas por © <a target="_blank" href="https://www.ign.es/web/ign/portal">Instituto Geográfico Nacional de España</a>',
+                  "layer": "OI.OrthoimageCoverage",
+                  matrixSet: 'EPSG:3857',
+             			format: 'image/jpeg',
+              		projection: projection_PNOA,
+              		tileGrid: new ol.tilegrid.WMTS({
+                    origin: ol.extent.getTopLeft(projectionExtent_PNOA),
+                		resolutions: resolutions_PNOA,
+                		matrixIds: matrixIds_PNOA
+                  }),
+                  style: 'default',
+              		wrapX: true,
+                  "VERSION": "1.0.0",
+                })),
+                opacity: 1.0,
+              }),
+               	new ol.layer.Tile({
+                  source: new ol.source.TileWMS(({
+                    url: "http://www.ign.es/wms-inspire/ign-base",
+        						attributions: ' - CC BY 4.0 <a href="http://www.scne.es/">SCNE</a>',
+        						params: {
+        						"LAYERS": "IGNBaseOrto",
+        						"TILED": "true",
+        						"VERSION": "1.3.0"},
+        						})),
+        					opacity: 1.000000,
+    							})
+              ]
+          }),			
+                     new ol.layer.Image({
+            source: new ol.source.ImageStatic({
+              attributions: '',
+              url: 'http://mapamtbmadrid.x10host.com/MapaRutasMTB/Mapa_Pedriza/Imagen/mapa-riscos-5600.jpg',
+                                projection: 'EPSG:3857',
+                                alwaysInRange: true,
+                                imageExtent: [-434913.993879, 4971460.178159, -428485.788395, 4981994.831483]
+            }),
+                      title: "Mapa Pedriza",
+          visible: true,
+          opacity: 1.0000,
+          }),
+        ],
+        controls: ol.control.defaults({
+          attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
+            collapsible: true,
+          })
+        }),
+        view: new ol.View({
+          center: ol.proj.fromLonLat([-3.8800000, 40.76000000000]),
+          zoom:13.5
+        }),
+		        loadTilesWhileAnimating: true,
+        controls: ol.control.defaults().extend([
+                      new ol.control.FullScreen(),
+            new ol.control.ScaleLine({units: 'metric'}),
+            new ol.control.ZoomSlider(),
+			new ol.control.LayerSwitcher({
+        enableOpacitySliders: true
+    }),
+        ]),
+      });
+        var mouse_position = new ol.control.MousePosition({
+    coordinateFormat: ol.coordinate.createStringXY(4),
+    projection: 'EPSG:4326'
+});
+        map.addControl(mouse_position);
+      	     	      dragAndDropInteraction.on('addfeatures', function(event) {
+        var vectorSource = new ol.source.Vector({
+          features: event.features
+        });
+        map.addLayer(new ol.layer.Vector({
+          source: vectorSource,
+          style: styleFunction
+        }));
+        map.getView().fit(
+            vectorSource.getExtent(), (map.getSize()));
+      });		  
+	        var popup = new Popup();
+			map.addOverlay(popup);
+      map.on('singleclick', function(evt) {
+  if (evt.dragging) {
+    return;
+  }
+
+    var info = document.getElementById('info');
+  info.style.display = 'none';
+
+    var target = document.getElementById('map');
+  var pixel = map.getEventPixel(evt.originalEvent);
+  var feature = map.forEachFeatureAtPixel(pixel, function(feature, layer) {
+    return feature;
+  });
+
+  if (feature) {
+    var text = feature.get('name') + feature.get('desc');
+    info.innerHTML = text;
+    info.style.display = 'block';
+      popup.show(evt.coordinate, info);
+  } else {
+    popup.hide();
+  }
+});
+        var boton = document.createElement('button');
+  boton.innerHTML = 'C';
+  function onClick(id, callback){
+    boton.addEventListener('click', callback);
+  }
+  onClick('boton-pan-center', function() {
+    view.animate({
+      center: ol.proj.transform([-3.8858333333333333, 40.83638888888889], 'EPSG:4326', 'EPSG:3857'),
+      zoom: 9,
+      duration: 2000
+    });
+  });  var elementoDiv = document.createElement('div');
+  elementoDiv.className = 'boton-pan-center ol-unselectable ol-control';
+  elementoDiv.appendChild(boton);
+  var NuevoControl = new ol.control.Control({ element: elementoDiv });
+  
+  map.addControl(NuevoControl);	  
+	  
+
+    map.addControl(layerSwitcher);
+
+    </script>
+  </body>
+</html>
