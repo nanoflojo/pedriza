@@ -5,6 +5,6 @@ Mapa construido con la biblioteca de JavaScript de código abierto Openlayers ht
 
 Se utilizan diferentes fuentes de información cartográfica en la red, todas de uso libre: OpenStreetMap, PNOA y Raster del IGN España, OpenTopoMap, Esri, Cyclemap, etc.
 
-La imagen de los riscos de La Pedriza es de https://josetxu.com/
+La imagen de los riscos de La Pedriza es de https://josetxu.com/, elaborado para https://cuadernodeescaladas.com/mapa-interactivo-de-la-pedriza/
 
 Este mapa es de uso privado, no está permitida su difusión ni su comercialización.
